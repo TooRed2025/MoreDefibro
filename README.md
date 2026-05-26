@@ -16,7 +16,7 @@
 ### 配置/Config
 | 设置/Setting | 默认/Default | 说明 |
 |---------|---------|-------------|
-| MinSpawnCount | `1` | 最低生成数 |
+| MinSpawnCount | `0` | 最低生成数 |
 | MaxSpawnCount | `4` | 最高生成数 |
 | MinPrice | `2` | 最低价格(千) |
 | MaxPrice | `10` | 最高价格(千) |
