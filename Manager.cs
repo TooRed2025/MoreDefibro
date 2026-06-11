@@ -1,46 +1,23 @@
 ﻿using HarmonyLib;
 using Photon.Pun;
-using System.Reflection;
 using UnityEngine;
 
 namespace MoreDefibro
 {
-    internal class Manager
+    [HarmonyPatch(typeof(ShopManager), "ShopInitialize")]
+    static class ShopInitializePatch
     {
-        private static readonly FieldInfo _itemValueMin = AccessTools.Field(typeof(ItemAttributes), "itemValueMin");
-        private static readonly FieldInfo _itemValueMax = AccessTools.Field(typeof(ItemAttributes), "itemValueMax");
-        public static void GetValue(ItemAttributes __instance) 
-        {
-            if (__instance.item != null && __instance.item.name == "Item ReviveItem")
-            {
-                int minP = SetConfig.minPrice.Value;
-                int maxP = SetConfig.maxPrice.Value;
-
-                if (minP <= 0 || maxP <= 0 || maxP < minP)
-                {
-                    MoreDefibro.Log.LogWarning($"价格配置无效(min:{minP}, max:{maxP})，使用默认值");
-                    minP = 2;
-                    maxP = 10;
-                }
-
-                float minVal = (minP * 1000f) / 4f;
-                float maxVal = (maxP * 1000f) / 4f;
-                _itemValueMin.SetValue(__instance, minVal);
-                _itemValueMax.SetValue(__instance, maxVal);
-            }
-        }
-
-        public static void SpawnItem(ShopManager __instance) 
+        static void Postfix(ShopManager __instance)
         {
             if (!SemiFunc.RunIsShop()) return;
             if (!SemiFunc.IsMasterClientOrSingleplayer()) return;
 
-            int minSpawn = SetConfig.minSpawnCount.Value;
-            int maxSpawn = SetConfig.maxSpawnCount.Value;
+            int minSpawn = MoreDefibro.MinSpawnCount.Value;
+            int maxSpawn = MoreDefibro.MaxSpawnCount.Value;
 
             if (minSpawn < 0 || maxSpawn < 0 || maxSpawn < minSpawn)
             {
-                MoreDefibro.Log.LogWarning($"生成数量配置无效(min:{minSpawn}, max:{maxSpawn})，使用默认值");
+                MoreDefibro.Logger.LogWarning($"生成数量配置无效(min:{minSpawn}, max:{maxSpawn})，使用默认值");
                 minSpawn = 1;
                 maxSpawn = 4;
             }
@@ -48,7 +25,7 @@ namespace MoreDefibro
             int spawnCount = Random.Range(minSpawn, maxSpawn + 1);
             if (spawnCount <= 0)
             {
-                MoreDefibro.Log.LogInfo("生成数量为0直接跳过");
+                MoreDefibro.Logger.LogInfo("生成数量为0直接跳过");
                 return;
             }
 
@@ -59,7 +36,7 @@ namespace MoreDefibro
 
             Transform extractionPoint = __instance.extractionPoint;
 
-            MoreDefibro.Log.LogInfo($"正在生成{spawnCount}个除颤器...");
+            MoreDefibro.Logger.LogInfo($"正在生成{spawnCount}个除颤器...");
 
             Vector3 forward = Vector3.ProjectOnPlane(extractionPoint.forward, Vector3.up).normalized;
             Vector3 right = Vector3.Cross(forward, Vector3.up);
@@ -86,7 +63,32 @@ namespace MoreDefibro
                     }
                 }
             }
-            MoreDefibro.Log.LogInfo($"生成完毕");
+            MoreDefibro.Logger.LogInfo($"生成完毕");
+        }
+    }
+
+    [HarmonyPatch(typeof(ItemAttributes), "GetValue")]
+    static class GetValuePatch
+    {
+        static void Prefix(ItemAttributes __instance)
+        {
+            if (__instance.item != null && __instance.item.name == "Item ReviveItem")
+            {
+                int minP = MoreDefibro.MinPrice.Value;
+                int maxP = MoreDefibro.MaxPrice.Value;
+
+                if (minP <= 0 || maxP <= 0 || maxP < minP)
+                {
+                    MoreDefibro.Logger.LogWarning($"价格配置无效(min:{minP}, max:{maxP})，使用默认值");
+                    minP = 2;
+                    maxP = 10;
+                }
+
+                float minVal = (minP * 1000f) / 4f;
+                float maxVal = (maxP * 1000f) / 4f;
+                __instance.itemValueMin = minVal;
+                __instance.itemValueMax = maxVal;
+            }
         }
     }
 }

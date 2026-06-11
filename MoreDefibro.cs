@@ -1,49 +1,53 @@
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
+using UnityEngine;
 
 namespace MoreDefibro
 {
-    [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+    [BepInPlugin("TooRed.MoreDefibro", "MoreDefibro", "1.0.3")]
     public class MoreDefibro : BaseUnityPlugin
     {
-        private Harmony _harmony;
-        internal static ManualLogSource Log;
+        internal static MoreDefibro Instance { get; private set; } = null!;
+        internal new static ManualLogSource Logger => Instance.Log;
+        private ManualLogSource Log => base.Logger;
+        internal Harmony Harmony { get; set; }
+        public static ConfigEntry<int> MinPrice { get; private set; }
+        public static ConfigEntry<int> MaxPrice { get; private set; }
+        public static ConfigEntry<int> MinSpawnCount { get; private set; }
+        public static ConfigEntry<int> MaxSpawnCount { get; private set; }
 
         private void Awake()
         {
-            Log = Logger;
-            SetConfig.config(Config);
+            Instance = this;
 
-            _harmony = new Harmony(PluginInfo.PLUGIN_GUID);
-            _harmony.PatchAll();
+            // Prevent the plugin from being deleted
+            this.gameObject.transform.parent = null;
+            this.gameObject.hideFlags = HideFlags.HideAndDontSave;
+            MinSpawnCount = Config.Bind("Settings", "MinSpawnCount", 0, new ConfigDescription("最小生成数量", new AcceptableValueRange<int>(0, 10)));
+            MaxSpawnCount = Config.Bind("Settings", "MaxSpawnCount", 4, new ConfigDescription("最大生成数量", new AcceptableValueRange<int>(1, 10)));
+            MinPrice = Config.Bind("Settings", "MinPrice", 2, new ConfigDescription("最低价格(千)", new AcceptableValueRange<int>(1, 30)));
+            MaxPrice = Config.Bind("Settings", "MaxPrice", 10, new ConfigDescription("最高价格(千)", new AcceptableValueRange<int>(10, 60)));
 
-            Log.LogInfo($"加载完毕");
+            Patch();
+
+            Log.LogInfo($"{Info.Metadata.GUID} v{Info.Metadata.Version} has loaded!");
         }
-
-        [HarmonyPatch(typeof(ShopManager), "ShopInitialize")]
-        static class ShopInitializePatch
+        internal void Patch()
         {
-            static void Postfix(ShopManager __instance)
-            {
-                Manager.SpawnItem(__instance);
-            }
+            Harmony ??= new Harmony(Info.Metadata.GUID);
+            Harmony.PatchAll();
         }
 
-        [HarmonyPatch(typeof(ItemAttributes), "GetValue")]
-        static class GetValuePatch
+        internal void Unpatch()
         {
-            static void Prefix(ItemAttributes __instance)
-            {
-                Manager.GetValue( __instance );
-            }
+            Harmony?.UnpatchSelf();
         }
-    }
 
-    public static class PluginInfo
-    {
-        public const string PLUGIN_GUID = "toored.moredefibro";
-        public const string PLUGIN_NAME = "MoreDefibro";
-        public const string PLUGIN_VERSION = "1.0.3";
+        private void Update()
+        {
+            // Code that runs every frame goes here
+        }
     }
 }
