@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace MoreDefibro
 {
-    [BepInPlugin("TooRed.MoreDefibro", "MoreDefibro", "1.0.3")]
+    [BepInPlugin("TooRed.MoreDefibro", "MoreDefibro", "1.0.4")]
     public class MoreDefibro : BaseUnityPlugin
     {
         internal static MoreDefibro Instance { get; private set; } = null!;
