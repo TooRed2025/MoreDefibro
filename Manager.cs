@@ -17,7 +17,7 @@ namespace MoreDefibro
 
             if (minSpawn < 0 || maxSpawn < 0 || maxSpawn < minSpawn)
             {
-                MoreDefibro.Logger.LogWarning($"生成数量配置无效(min:{minSpawn}, max:{maxSpawn})，使用默认值");
+                MoreDefibro.Logger.LogError($"生成数量配置无效(min:{minSpawn}, max:{maxSpawn})，使用默认值");
                 minSpawn = 1;
                 maxSpawn = 4;
             }
@@ -25,18 +25,15 @@ namespace MoreDefibro
             int spawnCount = Random.Range(minSpawn, maxSpawn + 1);
             if (spawnCount <= 0)
             {
-                MoreDefibro.Logger.LogInfo("生成数量为0直接跳过");
+                MoreDefibro.DeBug("生成数量为0直接跳过");
                 return;
             }
 
-            if (!StatsManager.instance.itemDictionary.TryGetValue("Item ReviveItem", out Item defibroItem))
-            {
-                return;
-            }
+            if (!StatsManager.instance.itemDictionary.TryGetValue("Item ReviveItem", out Item defibroItem)) return;
 
             Transform extractionPoint = __instance.extractionPoint;
 
-            MoreDefibro.Logger.LogInfo($"正在生成{spawnCount}个除颤器...");
+            MoreDefibro.DeBug($"正在生成{spawnCount}个除颤器...");
 
             Vector3 forward = Vector3.ProjectOnPlane(extractionPoint.forward, Vector3.up).normalized;
             Vector3 right = Vector3.Cross(forward, Vector3.up);
@@ -45,25 +42,18 @@ namespace MoreDefibro
 
             for (int i = 0; i < spawnCount; i++)
             {
-                float distance = 1.2f + (i % 2) * 0.8f;
-                float offsetX = ((i / 2) % 2 == 0 ? -1 : 1) * ((i / 2) + 1) * 0.7f;
+                float distance = 2f + (i % 2) * 0.5f;
+                float offsetX = ((i / 2) % 2 == 0 ? -1 : 1) * ((i / 2) + 1) * 0.4f;
 
                 Vector3 position = extractionPoint.position + forward * distance + right * offsetX;
                 position.y = 0.5f;
 
-                if (defibroItem.prefab?.Prefab != null)
-                {
-                    if (isMultiplayer)
-                    {
-                        PhotonNetwork.InstantiateRoomObject(defibroItem.prefab.ResourcePath, position, Quaternion.identity, 0, null);
-                    }
-                    else
-                    {
-                        Object.Instantiate(defibroItem.prefab.Prefab, position, Quaternion.identity);
-                    }
-                }
+                if (defibroItem.prefab?.Prefab == null) return;
+
+                if (isMultiplayer) PhotonNetwork.InstantiateRoomObject(defibroItem.prefab.ResourcePath, position, Quaternion.identity, 0, null);
+                else Object.Instantiate(defibroItem.prefab.Prefab, position, Quaternion.identity);
             }
-            MoreDefibro.Logger.LogInfo($"生成完毕");
+            MoreDefibro.DeBug($"生成完毕");
         }
     }
 
@@ -79,7 +69,7 @@ namespace MoreDefibro
 
                 if (minP <= 0 || maxP <= 0 || maxP < minP)
                 {
-                    MoreDefibro.Logger.LogWarning($"价格配置无效(min:{minP}, max:{maxP})，使用默认值");
+                    MoreDefibro.Logger.LogError($"价格配置无效(min:{minP}, max:{maxP})，使用默认值");
                     minP = 2;
                     maxP = 10;
                 }
